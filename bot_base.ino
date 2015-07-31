@@ -3,7 +3,7 @@
  * Compiled with Arduino IDE 1.6.5
  * The goal of this project is to provide remote control and some autonomous
  * program modes for a 2 wheeled robot driven by the 2x12 Sabertooth motor controller
- * !! no ramping assumes your motor controllor does it !!
+ * NOTICE!! no ramping, assumes your motor controllor does it !!
  * This robot also has a IR long range distance sensor panned by a servo
  * in order to cover a range of posible obstacles
  * The readme will include details of remote control via serial port
@@ -18,14 +18,14 @@ Servo sensorPan ;       // neck servo
 
 // direction constants
 #define BACK_LEFT  '1'
-#define BACK		   '2'
+#define BACK       '2'
 #define BACK_RIGHT '3'
 #define SPIN_LEFT	 '4'
-#define STOP		   '5'
+#define STOP       '5'
 #define SPIN_RIGHT '6'
-#define FWD_LEFT	 '7'
-#define FWD		     '8'
-#define FWD_RIGHT	 '9'
+#define FWD_LEFT   '7'
+#define FWD        '8'
+#define FWD_RIGHT  '9'
 // command types
 #define MOVEMENT   'M'
 #define SPEED      'S'
@@ -66,7 +66,7 @@ void loop(){
 
 //-------------- Main supporting functions ------------
 
-char* commandListen(char incoming){  // returns if a command has been called
+char* commandListen(char incoming){  // returns if a command has been recieved
   static char packet[2] = { 0, 0 }; // store potential incoming command packet
   // reset if a full packet has been recieved
   if(packet[0] && packet[1]){packet[0] = 0; packet[1] = 0;}
@@ -128,18 +128,17 @@ void drive(int speed, int direction){
   int finalSpeedLeft = 0;
   int finalSpeedRight = 0;
 
-	if (speed == 0 && direction) {
-		finalSpeedLeft = direction;
-		finalSpeedRight = -direction;
+	if(speed == 0 && direction) {
+    finalSpeedLeft = direction;
+    finalSpeedRight = -direction;
 	} else {
-		finalSpeedLeft = speed * ((-255 - direction) / -255.0);
-		finalSpeedRight = speed * ((255 - direction) / 255.0);
+    finalSpeedLeft = speed * ((-255 - direction) / -255.0);
+    finalSpeedRight = speed * ((255 - direction) / 255.0);
 
-		if (speed > 0 && finalSpeedLeft > speed){finalSpeedLeft = speed;}
-		if (speed > 0 && finalSpeedRight > speed){finalSpeedRight = speed;}
-		if (speed < 0 && finalSpeedLeft < speed){finalSpeedLeft = speed;}
-		if (speed < 0 && finalSpeedRight < speed){finalSpeedRight = speed;}
-
+    if (speed > 0 && finalSpeedLeft > speed){finalSpeedLeft = speed;}
+    if (speed > 0 && finalSpeedRight > speed){finalSpeedRight = speed;}
+    if (speed < 0 && finalSpeedLeft < speed){finalSpeedLeft = speed;}
+    if (speed < 0 && finalSpeedRight < speed){finalSpeedRight = speed;}
 	}
   // !! no ramping assumes your motor controllor does it !!
   leftWheel.writeMicroseconds(map(finalSpeedLeft,-255,255,1000,2000));
