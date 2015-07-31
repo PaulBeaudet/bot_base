@@ -128,7 +128,7 @@ void drive(int speed, int direction){
   int finalSpeedLeft = 0;
   int finalSpeedRight = 0;
 
-	if(speed == 0 && direction) {
+  if(speed == 0 && direction) {
     finalSpeedLeft = direction;
     finalSpeedRight = -direction;
 	} else {
