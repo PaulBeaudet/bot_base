@@ -8,24 +8,6 @@
  * in order to cover a range of posible obstacles
  * The readme will include details of remote control via serial port
  */
-#include <Servo.h>      // defines basic pinout
-Servo leftWheel ;       // left servo
-Servo rightWheel;       // right servo
-Servo sensorPan ;       // neck servo
-#define RIGHT_SERVO  53 // on Arduino Mega
-#define LEFT_SERVO   52
-#define SENSOR_SERVO 51
-
-// direction constants
-#define BACK_LEFT  '1'
-#define BACK       '2'
-#define BACK_RIGHT '3'
-#define SPIN_LEFT  '4'
-#define STOP       '5'
-#define SPIN_RIGHT '6'
-#define FWD_LEFT   '7'
-#define FWD        '8'
-#define FWD_RIGHT  '9'
 // command types
 #define MOVEMENT   'M'
 #define SPEED      'S'
@@ -33,23 +15,14 @@ Servo sensorPan ;       // neck servo
 // modes of operation
 #define REMOTE_OP  '1'
 #define OBSTACLE   '2'
-
 // boolean synonyms
 #define MONITOR_MODE 0
 #define TRIGER       1
 
-// drive speeds
-#define MAX_POWER 255
-#define ERROR     256
-
-
 // --------------- Main routines ------------------
 void setup(){
   Serial.begin(115200);
-  leftWheel.attach(LEFT_SERVO, 1000, 2000);   // left servo with min & max val
-  rightWheel.attach(RIGHT_SERVO, 1000, 2000); // right servo with min & max val
-  sensorPan.attach(SENSOR_SERVO);             // panning sensor servo
-
+  setupServos();
 }
 
 void loop(){
@@ -97,15 +70,15 @@ void commandHandler(char* packet){ // handle incoming commands
   }
 }
 
-char validCommand(char command){
-  if     (command == MOVEMENT){;}
-  else if(command == SPEED){;}
-  else if(command == PROGRAM){;}
+char validCommand(char cmd){
+  if     (cmd == MOVEMENT){;}
+  else if(cmd == SPEED){;}
+  else if(cmd == PROGRAM){;}
   else{
-    Serial.print(F("E:Invalid command ")); Serial.println(command);
-    command = 0; // set command to zero if not a valid command
+    Serial.print(F("E:Invalid cmd ")); Serial.println(cmd);
+    cmd = 0; // set command to zero if not a valid command
   }
-  return command;
+  return cmd;
 }
 
 char programMode(char mode){      // set autonomous program mode
@@ -121,84 +94,4 @@ char programMode(char mode){      // set autonomous program mode
     taskAtHand = REMOTE_OP;
   }
   return taskAtHand; // returns the set programMode
-}
-
-// ----------- drive train ------------------------
-void drive(int speed, int direction){
-  int finalSpeedLeft = 0;
-  int finalSpeedRight = 0;
-
-  if(speed == 0 && direction) {
-    finalSpeedLeft = direction;
-    finalSpeedRight = -direction;
-  } else {
-    finalSpeedLeft = speed * ((-255 - direction) / -255.0);
-    finalSpeedRight = speed * ((255 - direction) / 255.0);
-
-    if (speed > 0 && finalSpeedLeft > speed){finalSpeedLeft = speed;}
-    if (speed > 0 && finalSpeedRight > speed){finalSpeedRight = speed;}
-    if (speed < 0 && finalSpeedLeft < speed){finalSpeedLeft = speed;}
-    if (speed < 0 && finalSpeedRight < speed){finalSpeedRight = speed;}
-  }
-  // !! no ramping assumes your motor controllor does it !!
-  leftWheel.writeMicroseconds(map(finalSpeedLeft,-255,255,1000,2000));
-  rightWheel.writeMicroseconds(map(finalSpeedRight,-255,255,1000,2000));
-}
-
-void driveControl(char direction, char speed){
-  static int thisSpeed = 0; // record last speed driven for directional speed
-
-  int thisDirection = 0;
-  if(direction){
-    thisDirection = figureDirection(direction, thisSpeed);
-    if(thisDirection != ERROR){ thisSpeed = directionSpeed(direction, thisSpeed);}
-    else{return;} // invalid command skip setting drive
-  } else {
-    thisSpeed = figureSpeed(speed);
-    if(thisSpeed != 1){return;} // invalid command skip setting drive
-  }
-  drive(thisSpeed, thisDirection);
-}
-
-byte figureSpeed(char ascii){ // converts ascii numbers to a fraction of power
-  byte powerValue = 1; // notice there are no cases where this would be true
-  if     (ascii == '1'){powerValue = MAX_POWER * 0.25;} // 25% power
-  else if(ascii == '2'){powerValue = MAX_POWER * 0.50;} // 50% power
-  else if(ascii == '3'){powerValue = MAX_POWER * 0.75;} // 75% power
-  else if(ascii == '4'){powerValue = MAX_POWER;}
-  else{Serial.println(F("E:Invalid entry"));}
-  Serial.print(F("W:S:"));
-  Serial.println(ascii);
-  return powerValue;
-}
-
-int figureDirection(char ascii, int lastPower){
-  int directionValue = ERROR;
-  if     ( ascii == STOP)      {directionValue = 0;}
-  else if( ascii == BACK_LEFT) {directionValue = 0-lastPower;}
-  else if( ascii == BACK)      {directionValue = 0;}
-  else if( ascii == BACK_RIGHT){directionValue = lastPower;}
-  else if( ascii == SPIN_LEFT) {directionValue = 0-(lastPower/1.25);}
-  else if( ascii == SPIN_RIGHT){directionValue = lastPower/1.25;}
-  else if( ascii == FWD_LEFT)  {directionValue = 0-lastPower;}
-  else if( ascii == FWD)       {directionValue = 0;}
-  else if( ascii == FWD_RIGHT) {directionValue = lastPower;}
-  else {Serial.println("E:Invalid Move");}
-  Serial.print(F("W:D:"));
-  Serial.println(ascii);
-  return directionValue;
-}
-
-int directionSpeed(char ascii, int lastPower){
-  int speedValue = ERROR;
-  if     ( ascii == STOP)      {speedValue = 0;}
-  else if( ascii == BACK_LEFT) {speedValue = 0 - lastPower;}
-  else if( ascii == BACK)      {speedValue = 0 - lastPower;}
-  else if( ascii == BACK_RIGHT){speedValue = 0 - lastPower;}
-  else if( ascii == SPIN_LEFT) {speedValue = 0;}
-  else if( ascii == SPIN_RIGHT){speedValue = 0;}
-  else if( ascii == FWD_LEFT)  {speedValue = lastPower;}
-  else if( ascii == FWD)       {speedValue = lastPower;}
-  else if( ascii == FWD_RIGHT) {speedValue = lastPower;}
-  return speedValue;
 }
