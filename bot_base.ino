@@ -131,7 +131,7 @@ void drive(int speed, int direction){
   if(speed == 0 && direction) {
     finalSpeedLeft = direction;
     finalSpeedRight = -direction;
-	} else {
+  } else {
     finalSpeedLeft = speed * ((-255 - direction) / -255.0);
     finalSpeedRight = speed * ((255 - direction) / 255.0);
 
@@ -139,7 +139,7 @@ void drive(int speed, int direction){
     if (speed > 0 && finalSpeedRight > speed){finalSpeedRight = speed;}
     if (speed < 0 && finalSpeedLeft < speed){finalSpeedLeft = speed;}
     if (speed < 0 && finalSpeedRight < speed){finalSpeedRight = speed;}
-	}
+  }
   // !! no ramping assumes your motor controllor does it !!
   leftWheel.writeMicroseconds(map(finalSpeedLeft,-255,255,1000,2000));
   rightWheel.writeMicroseconds(map(finalSpeedRight,-255,255,1000,2000));
