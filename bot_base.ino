@@ -26,7 +26,9 @@ void setup(){
 }
 
 void loop(){
-  commandHandler(commandListen(Serial.read()));
+  if(Serial.available()){
+    commandHandler(commandListen(Serial.read()));
+  }
   /* pass the result of read into listener and listen into handler.
    * these are passed like this as a reminder that only one char is read on
    * any given program loop, new command processed when packet is finished
@@ -44,7 +46,7 @@ char* commandListen(char incoming){  // returns if a command has been recieved
   // reset if a full packet has been recieved
   if(packet[0] && packet[1]){packet[0] = 0; packet[1] = 0;}
 
-  if(incoming != 0xFF){     // data available from Serial? 0xff signals no data
+  if(incoming){     // data available from Serial? 0xff signals no data
     if(packet[0]){          // do we already have the first char in packet?
       packet[1] = incoming; // then this this the second
       return packet;        // in this case a "packet" is 2 chars, we are done
