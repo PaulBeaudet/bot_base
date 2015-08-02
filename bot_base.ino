@@ -8,9 +8,9 @@
  * in order to cover a range of posible obstacles
  * The readme will include details of remote control via serial port
  */
-// command types
 #include <TimeCheck.h> // https://github.com/PaulBeaudet/TimeCheck
 
+// command types
 #define MOVEMENT   'M'
 #define SPEED      'S'
 #define PROGRAM    'P'

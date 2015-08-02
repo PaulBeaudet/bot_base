@@ -2,13 +2,17 @@
 // MIT licence ~ see LICENCE for details
 // ----------- drive train functions ---------------------
 
-#include <Servo.h>      // defines basic pinout
-Servo leftWheel ;       // left servo
-Servo rightWheel;       // right servo
-Servo sensorPan ;       // neck servo
-#define RIGHT_SERVO  53 // on Arduino Mega
+#include <Servo.h>
+Servo leftWheel ;        // left servo
+Servo rightWheel;        // right servo
+Servo sensorPan ;        // neck servo
+#define RIGHT_SERVO  53  // on Arduino Mega
 #define LEFT_SERVO   52
 #define SENSOR_SERVO 51
+#define SENSOR_LEFT  30  // left most desired pan range of sensor
+#define SENSOR_RIGHT 140 // right most desired pan range of sensor
+#define SENSOR_SPEED 600 // speed of sensor pan
+
 
 void setupServos(){
   leftWheel.attach(LEFT_SERVO, 1000, 2000);   // left servo with min & max val
@@ -115,17 +119,6 @@ int directionSpeed(char ascii, int lastSpeed){
   return speedValue;
 }
 
-// -------------- async timed drive -----------
-boolean timeCheck(uint32_t durration){ // used for checking and setting timer
-  static uint32_t timer[2]={1,0}; // create timer to modify default check=true
-  if(durration){                   // given param other than zero
-    timer[1]=durration;           // set durration
-    timer[0]=millis();            // note the time set
-  }                                // if the durration has elapsed return true
-  else if(millis() - timer[0] > timer[1]){return true;}//time has passed
-  return false;                    // time has yet to pass
-}
-
 // -------------- Sensor Servo -----------------
 void sensorReact(int sensorValue){
 	// sorry this doesn't take into acount where the sensor is pointed
@@ -162,13 +155,12 @@ void sensorReact(int sensorValue){
 
 void panSensor(){
   static TimeCheck timer;
-  static byte position = 60; // default left
-
+  static byte position = SENSOR_LEFT;
+  
   if(timer.check()){
-    if(position == 60){position = 135;} // alternate position movement
-    else{position = 60;}
-    sensorPan.write(position);          // write current position
-    timer.set(30);                      // set next time to alternate possition
+    if(position == SENSOR_LEFT){position = SENSOR_RIGHT;}
+    else{position = SENSOR_LEFT;} // alternate position movement
+    sensorPan.write(position);    // write current position
+    timer.set(SENSOR_SPEED);      // set next time to alternate possition
   }
-
 }
