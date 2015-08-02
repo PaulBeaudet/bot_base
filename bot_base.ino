@@ -9,6 +9,8 @@
  * The readme will include details of remote control via serial port
  */
 // command types
+#include <TimeCheck.h> // https://github.com/PaulBeaudet/TimeCheck
+
 #define MOVEMENT   'M'
 #define SPEED      'S'
 #define PROGRAM    'P'
@@ -18,6 +20,8 @@
 // boolean synonyms
 #define MONITOR_MODE 0
 #define TRIGER       1
+// sensor
+#define IR_PIN 15
 
 // --------------- Main routines ------------------
 void setup(){
@@ -35,7 +39,7 @@ void loop(){
    */
   if(char mode = programMode(MONITOR_MODE) != REMOTE_OP){
     if(mode == OBSTACLE){/*execute obstacle avoidence rotine*/}
-    // check current autonomous program routine
+    obstacleAvoid();
   }
 }
 
@@ -96,4 +100,11 @@ char programMode(char mode){      // set autonomous program mode
     taskAtHand = REMOTE_OP;
   }
   return taskAtHand; // returns the set programMode
+}
+
+// --------------- obstacle avoidence -----------------
+
+void obstacleAvoid(){
+  panSensor();                      // constantly pan sensor
+  sensorReact(analogRead(IR_PIN));  // react to reading of IR pin
 }

@@ -44,14 +44,17 @@ void driveControl(char steer, char spd){
   static int thisSpeed = 0; // record last spd driven for directional spd
 
   int thisDirection = 0;
+  if(spd){
+    thisSpeed = figurePower(spd);
+    if(thisSpeed == 1){return;}
+  }
+
   if(steer){
     thisDirection = figureDirection(steer, thisSpeed);
     if(thisDirection != ERR){thisSpeed =directionSpeed(steer, thisSpeed);}
     else{return;} // invalid command skip setting drive
-  } else {
-    thisSpeed = figurePower(spd);
-    if(thisSpeed != 1){return;} // invalid command skip setting drive
   }
+
   drive(thisSpeed, thisDirection);
 }
 
@@ -110,4 +113,62 @@ int directionSpeed(char ascii, int lastSpeed){
   else if( ascii == FWD)       {speedValue = lastSpeed;}
   else if( ascii == FWD_RIGHT) {speedValue = lastSpeed;}
   return speedValue;
+}
+
+// -------------- async timed drive -----------
+boolean timeCheck(uint32_t durration){ // used for checking and setting timer
+  static uint32_t timer[2]={1,0}; // create timer to modify default check=true
+  if(durration){                   // given param other than zero
+    timer[1]=durration;           // set durration
+    timer[0]=millis();            // note the time set
+  }                                // if the durration has elapsed return true
+  else if(millis() - timer[0] > timer[1]){return true;}//time has passed
+  return false;                    // time has yet to pass
+}
+
+// -------------- Sensor Servo -----------------
+void sensorReact(int sensorValue){
+	// sorry this doesn't take into acount where the sensor is pointed
+  static TimeCheck timer;
+  static char currentDir = FWD; // default to moving forward
+
+  if(timer.check()){ // given last set time is up: defaults to true
+    if(sensorValue < 300){     // far enough away from something
+      if(currentDir = FWD){
+        driveControl('2',FWD);
+        currentDir = FWD;
+      } else if (currentDir == BACK){ // we backed up enough
+        driveControl('2',BACK_RIGHT);
+        currentDir = BACK_RIGHT;
+        timer.set(200);              // check back in x ms
+      } else if (currentDir == BACK_RIGHT){
+        driveControl('2',FWD);
+        currentDir = FWD;
+      }
+    } else {                           // too close to something
+      if(currentDir == FWD){
+        driveControl(0, BACK);         // back up!
+        currentDir = BACK;
+        timer.set(200);
+      } else if (currentDir == BACK){ // keep backing up!
+        driveControl('4', 0);         // speed up something is comming towards
+        timer.set(100);
+      } else if (currentDir == BACK_RIGHT){  // turned into a tight position
+        timer.set(100);                      // keep going
+      }
+    }
+  }
+}
+
+void panSensor(){
+  static TimeCheck timer;
+  static byte position = 60; // default left
+
+  if(timer.check()){
+    if(position == 60){position = 135;} // alternate position movement
+    else{position = 60;}
+    sensorPan.write(position);          // write current position
+    timer.set(30);                      // set next time to alternate possition
+  }
+
 }
