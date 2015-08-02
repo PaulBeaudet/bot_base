@@ -9,27 +9,22 @@
  * The readme will include details of remote control via serial port
  */
 #include <TimeCheck.h> // https://github.com/PaulBeaudet/TimeCheck
+#include "keyDefinitions.h" // See for contant definitions
 
-// command types
-#define MOVEMENT   'M'
-#define SPEED      'S'
-#define PROGRAM    'P'
-// modes of operation
-#define REMOTE_OP  '1'
-#define OBSTACLE   '2'
-// boolean synonyms
-#define MONITOR_MODE 0
-#define TRIGER       1
-// sensor
-#define IR_PIN 15
+// -------- ~ Pinout ~ Arduino Mega ~ -----------------
+#define IR_PIN       15
+#define RIGHT_SERVO  53
+#define LEFT_SERVO   52
+#define SENSOR_SERVO 51
 
-// --------------- Main routines ------------------
+// --------------- Main routine ------------------
 void setup(){
   Serial.begin(115200);
   setupServos();
 }
 
 void loop(){
+  // remote control
   if(Serial.available()){
     commandHandler(commandListen(Serial.read()));
   }
@@ -37,13 +32,14 @@ void loop(){
    * these are passed like this as a reminder that only one char is read on
    * any given program loop, new command processed when packet is finished
    */
+  // Autonomous modes
   if(char mode = programMode(MONITOR_MODE) != REMOTE_OP){
     if(mode == OBSTACLE){/*execute obstacle avoidence rotine*/}
     obstacleAvoid();
   }
 }
 
-//-------------- Main supporting functions ------------
+//-------------- supporting functions ------------
 
 char* commandListen(char incoming){  // returns if a command has been recieved
   static char packet[2] = { 0, 0 }; // store potential incoming command packet
@@ -103,8 +99,40 @@ char programMode(char mode){      // set autonomous program mode
 }
 
 // --------------- obstacle avoidence -----------------
-
 void obstacleAvoid(){
   panSensor();                      // constantly pan sensor
   sensorReact(analogRead(IR_PIN));  // react to reading of IR pin
+}
+
+void sensorReact(int sensorValue){
+	// sorry this doesn't take into acount where the sensor is pointed
+  static TimeCheck timer;
+  static char currentDir = FWD; // default to moving forward
+
+  if(timer.check()){ // given last set time is up: defaults to true
+    if(sensorValue < 300){     // far enough away from something
+      if(currentDir = FWD){
+        driveControl('2',FWD);
+        currentDir = FWD;
+      } else if (currentDir == BACK){ // we backed up enough
+        driveControl('2',BACK_RIGHT);
+        currentDir = BACK_RIGHT;
+        timer.set(200);              // check back in x ms
+      } else if (currentDir == BACK_RIGHT){
+        driveControl('2',FWD);
+        currentDir = FWD;
+      }
+    } else {                           // too close to something
+      if(currentDir == FWD){
+        driveControl(0, BACK);         // back up!
+        currentDir = BACK;
+        timer.set(200);
+      } else if (currentDir == BACK){ // keep backing up!
+        driveControl('4', 0);         // speed up something is comming towards
+        timer.set(100);
+      } else if (currentDir == BACK_RIGHT){  // turned into a tight position
+        timer.set(100);                      // keep going
+      }
+    }
+  }
 }
